@@ -2,12 +2,10 @@
 """
 discord-rpc-linux
 by 0xmakarov
-small GUI for setting a custom Discord Rich Presence on Linux (PySide6 + pypresence). don't mess with something you dont how its working gng
+small and pretty simple GUI for setting a custom Discord Rich Presence on Linux (PySide6 + pypresence). don't mess with something you dont how its working gng
 """
-
 import sys
 from typing import Dict, Any
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
@@ -28,12 +26,9 @@ from PySide6.QtWidgets import (
     QMenu,
     QStyle,
 )
-
 from presence_manager import PresenceManager
 import profiles as profile_store
 from pypresence.exceptions import DiscordNotFound, InvalidID, PipeClosed
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -45,14 +40,14 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._build_tray()
         self._load_profile_list(select_first=True)
-
-    # ------------------------------------------------------------------ UI
+        
+    #UI / if u wanna change something idk
     def _build_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
 
-        # --- Profiles ---
+        #Profiles
         profile_box = QGroupBox("Profile")
         profile_layout = QHBoxLayout(profile_box)
         self.profile_combo = QComboBox()
@@ -70,7 +65,7 @@ class MainWindow(QMainWindow):
         profile_layout.addWidget(btn_delete)
         root.addWidget(profile_box)
 
-        # --- Main fields ---
+        #mainfields
         form_box = QGroupBox("Rich Presence")
         form = QFormLayout(form_box)
 
@@ -107,7 +102,7 @@ class MainWindow(QMainWindow):
 
         root.addWidget(form_box)
 
-        # --- Buttons (clickable links on your Discord profile) ---
+        #buttons
         buttons_box = QGroupBox("Buttons (optional, max 2)")
         buttons_form = QFormLayout(buttons_box)
 
@@ -125,7 +120,7 @@ class MainWindow(QMainWindow):
 
         root.addWidget(buttons_box)
 
-        # --- Actions ---
+        #actions
         actions_layout = QHBoxLayout()
         self.activate_btn = QPushButton("Activate Presence")
         self.activate_btn.clicked.connect(self._on_activate)
@@ -134,15 +129,12 @@ class MainWindow(QMainWindow):
         actions_layout.addWidget(self.activate_btn)
         actions_layout.addWidget(self.clear_btn)
         root.addLayout(actions_layout)
-
         self.minimize_tray_check = QCheckBox("Minimize to tray on close")
         self.minimize_tray_check.setChecked(True)
         root.addWidget(self.minimize_tray_check)
-# mkv mkv mkv mkv
         self.status_label = QLabel("Status: disconnected")
         self.status_label.setAlignment(Qt.AlignCenter)
         root.addWidget(self.status_label)
-
     def _build_tray(self):
         icon = self.style().standardIcon(QStyle.SP_ComputerIcon)
         self.tray = QSystemTrayIcon(icon, self)
@@ -160,20 +152,18 @@ class MainWindow(QMainWindow):
         self.tray.activated.connect(self._on_tray_activated)
         self.tray.show()
 
-    # ---------------------------------------------------------- Profiles
+    # profiles
     def _load_profile_list(self, select_first: bool = False):
         self.profile_combo.blockSignals(True)
         self.profile_combo.clear()
         names = list(profile_store.load_all().keys())
         self.profile_combo.addItems(names)
         self.profile_combo.blockSignals(False)
-
         if names and select_first:
             self.profile_combo.setCurrentIndex(0)
             self._apply_profile_data(profile_store.load_all()[names[0]])
         elif not names:
             self._apply_profile_data(profile_store.new_profile())
-
     def _current_form_data(self) -> Dict[str, Any]:
         return {
             "client_id": self.client_id_edit.text().strip(),
@@ -189,7 +179,6 @@ class MainWindow(QMainWindow):
             "button2_label": self.button2_label_edit.text().strip(),
             "button2_url": self.button2_url_edit.text().strip(),
         }
-
     def _apply_profile_data(self, data: Dict[str, Any]):
         self.client_id_edit.setText(data.get("client_id", ""))
         self.details_edit.setText(data.get("details", ""))
@@ -203,14 +192,12 @@ class MainWindow(QMainWindow):
         self.button1_url_edit.setText(data.get("button1_url", ""))
         self.button2_label_edit.setText(data.get("button2_label", ""))
         self.button2_url_edit.setText(data.get("button2_url", ""))
-
     def _on_profile_selected(self, name: str):
         if not name:
             return
         profiles = profile_store.load_all()
         if name in profiles:
             self._apply_profile_data(profiles[name])
-
     def _on_new_profile(self):
         name, ok = QInputDialog.getText(self, "New profile", "Profile name:")
         if ok and name.strip():
@@ -218,7 +205,6 @@ class MainWindow(QMainWindow):
             profile_store.save_profile(name, profile_store.new_profile())
             self._load_profile_list()
             self.profile_combo.setCurrentText(name)
-
     def _on_save_profile(self):
         name = self.profile_combo.currentText().strip()
         if not name:
@@ -230,7 +216,6 @@ class MainWindow(QMainWindow):
         self._load_profile_list()
         self.profile_combo.setCurrentText(name)
         QMessageBox.information(self, "Saved", f"Profile '{name}' saved.")
-
     def _on_delete_profile(self):
         name = self.profile_combo.currentText().strip()
         if not name:
@@ -241,8 +226,7 @@ class MainWindow(QMainWindow):
         if confirm == QMessageBox.Yes:
             profile_store.delete_profile(name)
             self._load_profile_list(select_first=True)
-
-    # ------------------------------------------------------------ Actions
+    #Actions
     def _build_buttons_payload(self):
         buttons = []
         if self.button1_label_edit.text().strip() and self.button1_url_edit.text().strip():
@@ -260,13 +244,11 @@ class MainWindow(QMainWindow):
                 }
             )
         return buttons
-
     def _on_activate(self):
         client_id = self.client_id_edit.text().strip()
         if not client_id:
             QMessageBox.warning(self, "Missing Client ID", "Enter the Client ID of your Discord application.")
             return
-
         try:
             self.presence.connect(client_id)
             self.presence.set_start_timestamp_now()
@@ -301,19 +283,16 @@ class MainWindow(QMainWindow):
         self.presence.clear()
         self.status_label.setText("Status: presence cleared")
 
-    # -------------------------------------------------------------- Tray
+  #tray
     def _on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
             self._restore_window()
-
     def _restore_window(self):
         self.showNormal()
         self.activateWindow()
-
     def _quit_app(self):
         self.presence.disconnect()
         QApplication.quit()
-
     def closeEvent(self, event):
         if self.minimize_tray_check.isChecked():
             event.ignore()
@@ -327,15 +306,11 @@ class MainWindow(QMainWindow):
         else:
             self.presence.disconnect()
             event.accept()
-
-
 def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-
-
 if __name__ == "__main__":
     main()
