@@ -13,7 +13,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 #if pip gives you some trouble, use this instead
-# pip install -r requirements.txt --break-system-packages
+pip install -r requirements.txt --break-system-packages
 
 #if it complains about "xcb"
 sudo apt install libxcb-cursor0
